@@ -1,0 +1,308 @@
+
+#letters{
+    background-color: silver;
+    position: absolute;
+    align-self: center;
+    top: 30px;
+    left: 380px;
+    border: 5px solid black;
+    border-left: none;
+}
+#checkerBoard {
+    position: absolute;
+    align-self: baseline;
+    left: 428px;
+    top:83px;
+    border: 2px solid black;
+    border-bottom: none;
+    border-right: none;
+    z-index: 1;
+}
+#checkerLayer {
+    position: absolute;
+    left: 428px;
+    top: 83px;
+    border: 2px solid black;
+    border-bottom: none;
+    border-right: none;
+    z-index: 2;
+}
+#scoreDisplay {
+    position: absolute;
+    top: 335px;
+    left: 120px;
+    background-color: #3399ff;   
+    border: 5px solid black;
+    border-top: none;
+}
+
+#play:hover,#no:hover, #yes:hover, #accept:hover, #decline:hover, #resign:hover, #offerDraw:hover, #makeMove:hover, #showInstructions:hover, #hideInstructions:hover {
+    background-color: black;
+    color:white;
+    border-color: lightgray;
+    transition-duration: .1s;
+}
+
+#no,#yes,#accept,#decline {
+    width: 80px;
+    height: 22px;
+    font-family: monospace;
+    font-size: 14px;
+    background-color: lightgray;
+    border-color: black;
+    
+}
+
+#offerDraw, #resign{
+    width: 100px;
+    height: 30px;
+    font-family: monospace;
+    font-size: 14px;
+    font-size-adjust: 
+    background-color: #001a4d;
+    border-color: black;
+}
+
+#makeMove, #continue, #showInstructions, #hideInstructions{
+    width: 120px;
+    height: 40px;
+    font-family: monospace;
+    font-size: 14px;
+    background-color: lightgray;
+    border-color: black;
+}
+
+#showInstructions {
+    position: absolute;
+    align-self: center;
+    top: 10px;
+    left: 65px;
+}
+
+#hideInstructions {
+    position: absolute;
+    left: 65px;
+    top: 10px;
+    display: none;
+}
+#matchScore {
+    font-family: monospace;
+    font-size: 16px;
+    position: absolute;
+    left: 130px;
+    top: 350px;
+    
+}
+
+
+#red, #draws, #black {
+    font-family: monospace;
+    font-size: 12px;
+}
+#red {
+    position: absolute;
+    top: 335px;
+    left: 249px;
+}
+#draws {
+    position: absolute;
+    top: 335px;
+    left: 281px;
+}
+
+#black {
+    position: absolute;
+    top: 335px;
+    left: 321px;
+}
+
+
+
+#checkersInstructions{
+    position: absolute;
+    top:30px;
+    left: 120px;
+    background-color:#3399ff ;
+    border: 5px solid black;
+    border-bottom: none;
+    height: 300px;
+    width: 250px;
+    z-index: 3;
+}
+#rules{
+    position: abolute;
+    top: 50px;
+    width: 230px;
+    display: none;
+    color: black;
+    font-family: monospace;
+    z-index: 2;
+    font-size: 12px;
+    position:relative;
+    left: 10px
+}
+#start {
+    position: absolute;
+    right: 120px;
+    top: 75px;
+    font-family:monospace;
+    width:50px;
+}
+#end {
+    position: absolute;
+    right: 120px;
+    top: 125px;
+    font-family: monospace;
+    width: 50px;
+}
+#makeMove {
+    position: absolute;
+    right: 75px;
+    top: 175px;
+}
+
+#startLabel{
+    position: absolute;
+    right: 180px;
+    top: 75px;
+    font-family: monospace;
+    font-size: 18px;
+}
+#endLabel{
+    position: absolute;
+    right: 180px;
+    top: 125px;
+    font-family: monospace;
+    font-size: 18px;
+}
+#moveInputForm{
+    position: absolute;
+    top: 30px;
+    left: 985px;
+    width: 250px;
+    height: 300px;
+    background-color: #3399ff;
+    border: 5px solid black;
+    border-bottom: none;
+    border-left: none;
+}
+#field{
+    font-family: monospace;
+    font-size: 18px;
+    text-align: left; 
+    color: black;
+}
+#instructions{
+    color: black;
+    font-family: monospace;
+    z-index: 2;
+    font-size: 14px;
+    position: absolute;
+    left: 10px
+}
+#errorMessage{
+    color: black;
+    font-family: monospace;
+    font-size: 12px;
+    position: absolute;
+    top:35px;
+    height: 100px;
+    width: 230px
+}
+#divErrorForm {
+    position: absolute;
+    z-index: 2;
+    top:220px;
+    align-self: center;
+    width: 325px;
+    height: 150px;
+}
+
+#offerDraw{
+    position: absolute;
+    left: 10px;
+    top: 90px;
+}
+
+#accept{
+    display: none;
+    position: absolute;
+    left: 15px;
+    top: 125px;   
+}
+
+#decline{
+    display: none;
+    position: absolute;
+    right: 15px;
+    top: 125px;
+}
+
+#drawMessageForm {
+    position:absolute;
+    top: 335px;
+    left: 985px;
+    border: 5px solid black;
+    border-top: none;
+    border-left: none;
+    height: 300px;
+    width: 250px;
+    background-color: #3399ff; 
+}
+#fieldForDrawMessageForm{
+    border: none;
+    
+}
+#drawMessage {
+    font-family: monospace;
+    color:black;
+    font-size: 12px;
+    top:150px;
+    position: absolute;
+    align-self: center;
+    display: none;
+    
+}
+#resign{
+    display: inline;
+    position: absolute;
+    right: 10px;
+    top: 90px;
+}
+
+#continue {
+    display: none;
+    position: absolute;
+    right: 75px;
+    top: 200px;
+    width: 120px;
+    height: 40px;
+    font-family: monospace;
+    font-size: 18px;
+    background-color: lightgray;
+    border-color: black;  
+}
+
+#yes{
+    display: none;
+    position: absolute;
+    left: 15px;
+    top: 125px;
+}
+
+#no{
+    display: none;
+    position: absolute;
+    right: 15px;
+    top: 125px;   
+}
+#play{
+    z-index: 4;
+    position: absolute;
+    top: 385px;
+    left: 595px;
+    width: 150px;
+    height: 60px;
+    font-family: monospace;
+    font-size: 24px;
+}

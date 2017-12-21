@@ -1,0 +1,1424 @@
+<!DOCTYPE html>
+<html>
+    <head>
+<link rel="stylesheet"  href="CheckerBoard.css"/>   
+  
+    </head>    
+<body id="gameBackground" >
+<!-- The different canvases I manipulate within my script-->
+<canvas id="scoreDisplay" width = "250" height = "300" > </canvas>
+<canvas id="checkerBoard" width = "550" height = "550" ></canvas>
+<canvas id="checkerLayer" width = "550" height = "550" ></canvas>
+<canvas id = "letters" width="600" height = "600"></canvas>
+<!-- Form for my instructions-->
+    <div id ="checkersInstructions"> 
+        <button id ="showInstructions" onclick = "showRules()">Instructions</button>
+        <button id ="hideInstructions" onclick = "hideRules()"> Hide Instructions</button>
+        <p id = "rules"> Black moves first. Players then alternate moves.
+        Moves are allowed only on the dark squares, so pieces always move diagonally. Single pieces are always limited to forward moves (toward the opponent).
+        A piece making a non-capturing move (not involving a jump) may move only one square.
+        A piece making a capturing move (a jump) leaps over one of the opponent's pieces, landing in a straight diagonal line on the other side. Only one piece may be captured in a single jump; however, multiple jumps are allowed on a single turn.</p>
+    </div>
+ <!-- My different Labels for the Scoreboard-->  
+    <p id = "red"> Red </p> 
+    <p id = "draws"> Draws </p> 
+    <p id = "black"> Black </p> 
+    <p id = "matchScore"> Match Score</p>
+
+<!-- The input form for entering your moves-->
+<form id = "moveInputForm" onsubmit = "return false">
+    <fieldset id= "field" onsubmit="return false">
+        <legend>Make Your Move</legend>
+            <input type ="text" name="From" id="start">        
+            <input  id = "end" type ="text">                      
+                <button id = "makeMove" onclick="moveChecker()" onsubmit="return false"> Make Move </button>      
+                     <label for="end" id="endLabel"> To:</label>
+                     <label for="start" id = "startLabel"> From:</label>
+                           
+<!-- My error message Display -->        
+                        <div id = "divErrorForm">
+                            <p id ="instructions"> How to play:</p>
+                            <label id ="errorMessage"> </label>
+                        </div>  
+
+    </fieldset>
+</form>
+<!-- My Menu with the options for resignation, offering draws etc-->
+<form id ="drawMessageForm" onsubmit="return false">    
+    <fieldset id ="fieldForDrawMessageForm">
+        
+        <button id ="offerDraw" onclick = "drawOffer()"> Offer Draw</button>
+        <button id = "accept" onclick = "accepted()">Accept</button>
+        <button id = "decline" onclick ="declined()">Decline</button>
+        <button id = "resign" onclick ="resigned()"> Resign</button>
+        <button id = "continue" onclick = "continued()">Continue</button>
+        <button id ="yes" onclick = "restart()"> Yes</button>                              
+        <button id = "no" onclick = "exit()"> No</button>
+      
+<!-- My message display for the Menu-->
+        <p id = "drawMessage"> Your opponent has offered you a draw.</p> 
+    
+    </fieldset>
+</form>
+   
+
+<script>  
+// the different documents I manipulate
+var checkerBoard = document.getElementById("checkerBoard"); 
+var letterDisplay = document.getElementById("letters");
+var scoreDisplay = document.getElementById("scoreDisplay");
+
+var ctxScoreDisplay = scoreDisplay.getContext("2d");   
+var ctxCheckerBoard = checkerBoard.getContext("2d"); 
+var ctxLetterDisplay = letterDisplay.getContext("2d");
+// dimensions I am using 
+var xspace = 35;
+var yspace = 52;
+var radius = 25;
+var tileSize = checkerBoard.width / 8;
+var margin = 550/8;
+var square = 40;
+var initialSpace = 73;
+// for labeling the grid for the checker board.
+var blackWin = 0;
+var draws = 0;
+var redWin = 0;
+// my sound files.
+var myGolfClap = new Audio ("myGolfClap.mp3");
+var myYay = new Audio ("myYay.mp3");
+// click sound 
+var myClick = new Audio ("myClick.mp3");
+
+// my background songs.
+var trackOne = new Audio ("trackOne.mp3")
+var trackTwo = new Audio ("trackTwo.mp3") 
+
+// myBooleans for doing the golf clap and the win splash.
+var winBool = false;
+var kingedBool = false;
+// for labeling the grid.
+var lettersNumbers = [];
+    lettersNumbers [0] = "A"; lettersNumbers [8] = "1";
+    lettersNumbers [1] = "B"; lettersNumbers [9] = "2";
+    lettersNumbers [2] = "C"; lettersNumbers [10] = "3";
+    lettersNumbers [3] = "D"; lettersNumbers [11] = "4";
+    lettersNumbers [4] = "E"; lettersNumbers [12] = "5";
+    lettersNumbers [5] = "F"; lettersNumbers [13] = "6";
+    lettersNumbers [6] = "G"; lettersNumbers [14] = "7";
+    lettersNumbers [7] = "H"; lettersNumbers [15] = "8";
+ // for changing the color.   
+var colorChanges = [];
+    colorChanges [0] = "gameBackground"; 
+    colorChanges [1] = "scoreDisplay";
+    colorChanges [2] = "checkersInstructions";
+    colorChanges [3] = "moveInputForm";
+    colorChanges [4] = "drawMessageForm";
+// for displaying the differenet error types.
+var errorType = [];
+    errorType [0] = "Your starting square does not have your checker on it."; //DONE
+    errorType [1] = "Your destination square is not an available square on the checkerboard."; //DONE
+    errorType [2] = "Your destination square is the same square as your starting square." //DONE
+    errorType [3] = "A checker cannot move directly horizontal."; //DONE
+    errorType [4] = "A checker cannot move directly vertical."; //DONE
+    errorType [5] = "This checker is not a King, it cannot move diagonally backwards"; //DONE
+    errorType [6] = "Your checker cannot perform the move because there is another piece obstructing it."; //DONE
+    errorType [7] = "A checker can only capture one enemy checker per jump.";
+    errorType [8] = "This checker is not a King, it cannot move more than one square in a move.";
+    errorType [9] = "A King cannot capture when it moves more than one square.";
+    errorType [10] = "A King cannot move in a non-diagonal manner.";
+    errorType [11] = "A checker cannot land on a square that is red." //DONE
+    errorType [12] = "When allowed another turn because of double jump, you must move the same checker."
+
+
+// function to animate the checkerboard when there is a win.
+function winSplash (winBool) {
+    if (winBool) {
+        myYay.play();
+        var id = setInterval(splash, 300);
+        var winCounter = 0;
+            function splash () {    
+                    if (winCounter < 18) {
+                        splashing (winCounter);
+                        winCounter++;
+                    } else if (winCounter < 20){
+                        
+                        generateBoard();
+                        winCounter++;    
+                    } else {
+                        winBool = false;
+                        return winBool;
+                        clearInterval(id);
+                        
+                    } 
+           }
+        }
+}    
+    
+// will golf clap if there is a coronation during the game.
+function kinged (kingedBool) {
+    if (kingedBool) {
+        
+        var id = setInterval (golfClap, 1000);
+        var gCounter = 0;   
+            function golfClap (){
+                if (gCounter < 4) {
+                    myGolfClap.play ();
+                    
+                    gCounter++;
+                } else {
+                    
+                    myGolfClap.pause ();
+            
+                    clearInterval(id);
+                    
+                }
+            }
+    }
+}  
+// my method to play music
+function playMusic () {
+    var start = setTimeout(loop, 100);
+    var id = setInterval (loop, 200000);
+    var musicCounter = 0;
+        function loop () {
+            if (musicCounter % 2 == 0) {
+                trackTwo.play ();
+                musicCounter++;
+            } else {
+                trackOne.play ();
+                musicCounter++;
+            } 
+        }
+        
+}   
+
+// generates the grid
+function generateLettersNumbers (){
+    for (i = 0; i < 16; i++){
+        
+            if (i < 8) {
+                ctxLetterDisplay.font = "40px monospace";
+                ctxLetterDisplay.fillStyle = "black";
+                ctxLetterDisplay.fillText (lettersNumbers[i], (margin * i) + 70, 35);
+            } else {
+                
+                ctxLetterDisplay.font = "40px monospace";
+                ctxLetterDisplay.fillStyle = "black";
+                ctxLetterDisplay.fillText (lettersNumbers[i], 10, (margin * (i - 7)) + 30  );
+                
+            }        
+    }
+}
+  
+ //method for rendering scoreboard
+function renderScoreBoard ( color, xpos, ypos, height, width){
+    ctxScoreDisplay.fillStyle = color;
+    ctxScoreDisplay.beginPath();
+    ctxScoreDisplay.rect( xpos, ypos, height, width);
+    ctxScoreDisplay.fill();
+    ctxScoreDisplay.closePath();
+} 
+
+  // displays red wins
+function showRedWins (redWin){
+        renderScoreBoard("red", square + initialSpace, 30, square, square);
+        ctxScoreDisplay.font = "30px monospace";
+        ctxScoreDisplay.fillStyle = "black";
+        ctxScoreDisplay.fillText ( redWin, square + initialSpace + 10 , 60);
+}
+    
+// displays draws
+function showDraws (draws){
+        renderScoreBoard("silver", (2 * square) + initialSpace, 30, square, square);
+        ctxScoreDisplay.font = "30px monospace";
+        ctxScoreDisplay.fillStyle = "black";
+        ctxScoreDisplay.fillText ( draws, (2 * square) +initialSpace + 10, 60);
+    
+}
+    
+// displays black wins
+function showBlackWins (blackWin){
+        renderScoreBoard("black", (3 * square) + initialSpace, 30, square, square);
+        ctxScoreDisplay.font = "30px monospace";
+        ctxScoreDisplay.fillStyle = "white";
+        ctxScoreDisplay.fillText ( blackWin, (3 * square) + initialSpace + 10, 60);
+    
+}
+    
+// if there is a win it will either generate this new board or the other function with a set Interval.
+function winBoardOne () {
+    for (i = 0; i < 8; i++) {
+        for (j = 0; j < 8; j++) {
+            
+            if ((i + j) % 2 === 0) {
+                ctxCheckerBoard.fillStyle="white";
+   		        ctxCheckerBoard.fillRect(tileSize*i,tileSize*j,tileSize,tileSize);
+            } else {
+                ctxCheckerBoard.fillStyle="grey";
+   		        ctxCheckerBoard.fillRect(tileSize*i,tileSize*j,tileSize,tileSize);
+            }
+        }
+    }
+}
+// this is the other board
+function winBoardTwo () {
+    for (i = 0; i < 8; i++) {
+        for (j = 0; j < 8; j++) {
+            
+            if ((i + j) % 2 === 0) {
+                ctxCheckerBoard.fillStyle="grey";
+   		        ctxCheckerBoard.fillRect(tileSize*i,tileSize*j,tileSize,tileSize);
+            } else {
+                ctxCheckerBoard.fillStyle="white";
+   		        ctxCheckerBoard.fillRect(tileSize*i,tileSize*j,tileSize,tileSize);
+            }
+        }
+    }
+}   
+//my splash when there is a win.
+function splashing(winCounter){
+        if (winCounter % 2 == 0) {  
+            winBoardOne();
+        } else if (winCounter % 2 == 1) {
+            winBoardTwo();
+        }  
+}
+//generates board
+function generateBoard() {
+	for(i = 0; i < 8; i++) {
+        for(j = 0; j < 8; j++) {
+           
+            if ((i + j) % 2 === 0){
+                
+                ctxCheckerBoard.fillStyle="#404040";
+   		        ctxCheckerBoard.fillRect(tileSize*i,tileSize*j,tileSize,tileSize);
+                                
+            } else {
+                    
+                    ctxCheckerBoard.fillStyle="#b30000";
+                    ctxCheckerBoard.fillRect(tileSize*i,tileSize*j,tileSize,tileSize);
+                
+            }
+        }
+    }
+}
+//changes backgroundColor
+function backgroundColorChange(color){
+    for( i = 0; i < 5; i++){
+            if (color === "red"){
+          
+             document.getElementById(colorChanges[i]).style.backgroundColor = "salmon";
+         
+            
+             
+            } else {
+             
+                document.getElementById(colorChanges[i]).style.backgroundColor = "grey";
+            }
+    }
+}
+
+// method to render checkers
+function renderChecker(xpos, ypos, color) {
+    
+    ctxScoreDisplay.fillStyle = color;
+    if(color === "black") {
+        ctxScoreDisplay.strokeStyle = "white";
+    } else {
+        ctxScoreDisplay.strokeStyle = "black";
+    }
+    
+    ctxScoreDisplay.beginPath();
+    ctxScoreDisplay.arc(xpos, ypos, radius, 0, 2 * Math.PI);
+    ctxScoreDisplay.lineWidth = 3;
+    ctxScoreDisplay.stroke();
+    ctxScoreDisplay.fill();
+    ctxScoreDisplay.closePath();
+}
+// method to display captured checkers
+function displayCapturedRedCheckers(redCap) {
+ 
+        for ( i = 0; i < redCap ; i++) {
+           if(i < 6){
+               
+                renderChecker(xspace * (i + 1), 50 + yspace, 'red');
+           
+           } else if (i < 11){
+    
+               renderChecker(xspace * (i - 5) , 50 + (2 * yspace), 'red');
+            } else  {
+                blackCap = 0;
+                clearDisplay ();
+                
+              
+                
+            }
+        }
+}
+  // method to display black captured checkers
+function displayCapturedBlackCheckers(blackCap) {
+ 
+        for (i = 0; i < blackCap; i++) {
+           if(i < 6){
+               
+               renderChecker(xspace * (i + 1) , yspace + 160, 'black');
+           
+           } else if (i < 11) {
+               
+               renderChecker(xspace * (i - 5) ,( 2 * yspace )+ 160, 'black');    
+           } else { 
+               redCap = 0;
+               clearDisplay ();
+                 
+           }
+        }
+} 
+// clears score board
+function clearDisplay (){
+    ctxScoreDisplay.clearRect (0,0, 250,300);
+}
+
+
+// Displays My different Errors.   
+var errorDisplay = function (errorNumber){
+    if (errorNumber === 13) {
+        
+        document.getElementById("errorMessage").innerText = "To move a checker, type in the values in the to and from boxes respectively in a letter number format (e.g (A3)). Then click the make move button. To offer a draw or resign, you press the respective buttons to enter your decision";
+        document.getElementById("instructions").innerText = "How To Play:";
+
+    } else{
+        
+        document.getElementById("errorMessage").innerText = errorType [errorNumber];
+        document.getElementById("instructions").innerText = "Error:"
+    }
+}
+// The next functions are all manipulated when you click their respective buttons. Are all part of my offer draw form.
+function showRules(){
+    document.getElementById("rules").style.display = "inherit";
+    document.getElementById("showInstructions").style.display = "none";
+    document.getElementById("hideInstructions").style.display = "inherit";
+}
+function hideRules(){
+    document.getElementById("rules").style.display = "none";
+    document.getElementById("showInstructions").style.display = "inherit";
+    document.getElementById("hideInstructions").style.display = "none";
+}
+
+function drawOffer(){
+    switchTurn();
+    document.getElementById("drawMessage").style.display = "inherit";
+    document.getElementById("drawMessage").innerText = "Your opponent has offered  a draw.";
+    document.getElementById("accept").style.display = "inherit";
+    document.getElementById("decline").style.display = "inherit";
+    document.getElementById("resign").style.display = "none";
+    document.getElementById("yes").style.display = "none";
+    document.getElementById("no").style.display = "none";
+}
+
+function accepted(){
+    document.getElementById("drawMessage").innerText = "The battle ends in a draw. Play again?";
+    document.getElementById("yes").style.display = "inherit";
+    document.getElementById("no").style.display = "inherit";
+    document.getElementById("accept").style.display = "none";
+    document.getElementById("decline").style.display = "none";
+    document.getElementById("continue").style.display="none";
+    draws++;
+    // for manipulating turn and score
+    if (currentTurn === 'red'){
+    switchTurn ();
+    }
+    clearDisplay();
+    resetBoard();
+    
+}
+function declined(){
+    switchTurn();
+    // elements that change when I press each  button.
+    document.getElementById("drawMessage").innerText = "Your opponent has declined your draw offer. ";
+    document.getElementById("continue").style.display="inherit";
+    document.getElementById("yes").style.display = "none";
+    document.getElementById("no").style.display = "none";
+}
+function resigned(){
+    // for my menu
+    document.getElementById("drawMessage").style.display = "inherit";
+    document.getElementById("drawMessage").innerText = "Your opponent has resigned. Play again?"
+    document.getElementById("yes").style.display = "inherit";
+    document.getElementById("no").style.display = "inherit";
+    // for the score display
+    clearDisplay();
+    if (currentTurn === 'black'){
+
+    redWin++;
+    resetBoard();
+    
+    } else {
+    blackWin++;
+    switchTurn();
+    resetBoard();
+    }
+    
+    
+}
+function continued(){
+    document.getElementById("drawMessage").style.display ="none";
+    document.getElementById("continue").style.display = "none";
+    document.getElementById("accept").style.display = "none";
+    document.getElementById("decline").style.display = "none";
+    document.getElementById("resign").style.display = "inherit";
+    
+}
+function restart (){
+    document.getElementById("yes").style.display = "none";
+    document.getElementById("no").style.display = "none";
+    document.getElementById("drawMessage").innerText = "";
+    document.getElementById("resign").style.display = "inherit";
+    
+    if (currentTurn === 'red'){
+        switchTurn();
+    } 
+    resetBoard();
+    
+}
+function exit() {
+    location.href = "splashScreen.html";
+    
+}
+playMusic();
+backgroundColorChange("black");
+generateBoard();
+generateLettersNumbers ();   
+showRedWins (redWin);
+showDraws (draws);
+showBlackWins (blackWin);
+winSplash (winBool);
+kinged(kingedBool);
+errorDisplay (13);
+
+</script>
+    
+<script>
+    
+    var canvas = document.getElementById('checkerLayer');
+var ctx = canvas.getContext('2d');
+
+var tileSize = canvas.width / 8;
+
+//FORM FOR MOVING CHECKERS
+var inOutForm = document.getElementById("moveInputForm");
+
+//CHECKERS ARRAY FOR SEPERATE COLORS
+var checkersRed = [];
+var checkersBlack = [];
+
+//NUMBER OF BLACK AND RED CHECKERS CAPTURED
+var blackCap = 0;
+var redCap = 0;
+
+//NUMBER OF WINS AND DRAWS
+var redWin = 0;
+var blackWin = 0;
+var draws = 0;
+
+//STRING FOR DETERMINING PLAYER TURN
+var currentTurn = 'black';
+
+//VARIABLE FOR DOUBLE JUMP
+var doubleJump = false;
+var doubleJumpIndex = -1;
+
+//STORE ALL POSSIBLE DOUBLE JUMP VALUES; EVEN INDEXES ARE XPOS AND ODD VALUES ARE YPOS
+var doubleJumpList = [];
+
+//ARRAY FOR CONVERTING TO COORDINATES
+var inputConversionCap = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
+var inputConversionLow = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
+
+//SET TRUE FOR DEBUG MODE
+var DEBUG = false;
+
+//CHECKER OBJECT CONSTRUCTOR
+//PARAMETERS: COLUMN AND ROW GRID COORDINATES AND COLOR OF CHECKER
+function checkerObj(index, x, y, color) {
+    
+    this.index = index;
+    this.xpos = x;
+    this.ypos = y;
+    this.kinged = false;
+    this.jumped = false;
+    
+    this.radius = (tileSize / 2) - 5;
+    this.color = color;
+    this.outline;
+    
+    if (this.color === 'black') {
+        this.outline = 'white';
+    } else {
+        this.outline = 'black';
+    }
+    
+}
+
+//GENERATE CHECKER ARRAYS
+function generateCheckerObjs() {
+    'use strict';
+    
+    var posR = 0;
+    var posB = 0;
+    
+    for (var i = 0; i < 8; i++) {
+        for (var j = 0; j < 8; j++) {
+            if((i+j) % 2 === 0) {
+                if (j > 4) {
+                    checkersRed[posR] = new checkerObj(posR, i, j, 'red');
+                    posR++;
+                } else if (j < 3) {
+                    checkersBlack[posB] = new checkerObj(posB, i, j, 'black');
+                    posB++;
+                }
+            }
+        }
+    }
+}
+
+//DRAW CHECKERS
+function renderCheckers() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    for(var i = 0; i < 12; i++) {
+        render(checkersRed[i]);
+        render(checkersBlack[i]);
+    }
+    
+    //RENDER CHECKER TO CANVAS AT X AND Y POS
+    function render(checker) {
+        'use strict';
+
+        if(!checker.jumped) {
+            ctx.fillStyle = checker.color;
+            ctx.strokeStyle = checker.outline;
+            ctx.lineWidth = 2;
+
+            ctx.beginPath();
+            ctx.arc(checker.xpos * tileSize + tileSize / 2, checker.ypos * tileSize + tileSize / 2, checker.radius, 0, 2 * Math.PI, false);
+            ctx.closePath();
+
+            ctx.fill();
+            ctx.stroke();
+
+            //IF DEGUB: WRITE THE NUMBER OF THE CHECKER ON CHECKER
+            if(DEBUG) {
+                ctx.font = "30px Arial";
+                ctx.fillStyle = 'blue';
+                ctx.fillText(checker.index, checker.xpos * tileSize + tileSize / 4, checker.ypos * tileSize + 30 + tileSize / 4);
+            }
+        }
+    }
+    
+    //DISPLAY CAPTURED RED AND BLACK CHECKERS
+    displayCapturedRedCheckers(redCap);
+    displayCapturedBlackCheckers(blackCap);
+    
+ }
+
+//RESET GAME
+function resetBoard() {
+    
+    //RESET INITIAL VALUES
+    for(i = 0; i < checkersBlack.length; i++) {
+        checkersBlack[i] = null;
+        checkersRed[i] = null;
+    }
+    blackCap = 0;
+    redCap = 0;
+    currentTurn = 'black';
+    
+    //SHOW WINS
+    showBlackWins(blackWin);
+    showRedWins(redWin);
+    showDraws(draws);
+    
+    //SHOW CAPTURED CHECKERS
+    displayCapturedBlackCheckers(blackCap);
+    displayCapturedRedCheckers(redCap);
+    
+    //INITIALIZE AND RENDER NEW CHECKERS
+    generateCheckerObjs();
+    renderCheckers();
+}
+
+//CHECKS FOR ILLEGAL MOVES
+//PARAMETERS: CHECKER TO BE MOVED, ENDING X POSITION, ENDING Y POSITION
+function runChecks(checker, xpos, ypos) {
+    
+    var returnValue = true;
+    
+    //END SQUARE IS NOT ON BOARD; ERROR 1
+    if (xpos < 0 || ypos < 0 || xpos > 7 || ypos > 7) {
+        errorDisplay(1);
+        returnValue = false;
+    }
+
+    //START SQUARE SAME AS END SQUARE; ERROR 2
+    if (checker.xpos === xpos && checker.ypos === ypos) {
+        errorDisplay(2);
+        returnValue = false;
+    }
+
+    //CHECKER MOVES HORIZONTAL; ERROR 3
+    if (checker.ypos === ypos) {
+        errorDisplay(3);
+        returnValue = false;
+    }
+    
+    //CHECKER MOVES VERTICAL; ERROR 4
+    if (checker.xpos === xpos) {
+        errorDisplay(4);
+        returnValue = false;
+    }
+    
+    //ANOTHER CHECKER ON END SQUARE; ERROR 6
+    for (i = 0; i < checkersBlack.length; i++) {
+        if (!checkersBlack[i].jumped) {
+            if (checkersBlack[i].xpos === xpos && checkersBlack[i].ypos === ypos) {
+                errorDisplay(6);
+                returnValue = false;
+            }
+        }
+        if (!checkersRed[i].jumped) {
+            if (checkersRed[i].xpos === xpos && checkersRed[i].ypos === ypos) {
+                errorDisplay(6);
+                returnValue = false;
+            }
+        }
+
+    }
+    
+    //CHECKER MOVES IN NONDIAGONAL MANNER; ERROR 10
+    if (Math.abs((ypos - checker.ypos) / (xpos - checker.xpos)) != 1) {
+        errorDisplay(10);
+        returnValue = false;
+    }
+    
+    //CHECKER MOVES TO RED SQUARE; ERROR 11
+    if ((xpos + ypos) % 2 != 0) {
+        errorDisplay(11);
+        returnValue = false;
+    }
+    
+    
+    if(!checker.kinged) {
+        //NONKINGED CHECKS
+        
+        if (checker.color === 'black') {
+            //BLACK CHECKS
+            
+            //BLACK MOVES BACK DIAGONALLY; ERROR 5
+            if (ypos < checker.ypos) {
+                errorDisplay(5);
+                returnValue = false;
+            }
+            
+            
+            //CHECKER MOVES MORE THAN ONE SQUARE; ERROR 8
+            if(Math.abs(checker.xpos - xpos) > 1 && Math.abs(checker.ypos - ypos) > 1) {
+                
+                var checkerJumped = false;
+                
+                //CHECK FOR RED CHECKER TO BE JUMPED
+                for(i = 0; i < checkersRed.length; i++) {
+                    
+                    if(!checkersRed[i].jumped) {
+                        
+                        //IF CHECKER TO BE JUMPED WITHIN ONE SQUARE OF JUMPING CHECKER'S POSITION AND JUMPED CHECKER WITHIN ONE SQUARE OF END
+                        if (!(Math.abs(checkersRed[i].xpos - checker.xpos) === Math.abs(xpos - checkersRed[i].xpos) && 
+                            Math.abs(checker.ypos - checkersRed[i].ypos) === Math.abs(ypos - checkersRed[i].ypos)) && !checkerJumped) {
+
+                            if(i === checkersRed.length - 1) {
+                                errorDisplay(8);
+                                returnValue = false;
+                            }
+
+                        } else {
+
+                            if (!checkerJumped) {
+                                checkersRed[i].jumped = true;
+                                checkerJumped = true;
+                                redCap++;
+                            }
+                        }
+                    }
+                }
+                
+            }
+            
+        } else {
+            //RED CHECKS
+            
+            //RED MOVES BACK DIAGONALLY; ERROR 5
+            if (ypos > checker.ypos) {
+                errorDisplay(5);
+                returnValue = false;
+            }
+            
+            //CHECKER MOVES MORE THAN ONE SQUARE; ERROR 8
+            if(Math.abs(checker.xpos - xpos) > 1 && Math.abs(checker.ypos - ypos) > 1) {
+                
+                var checkerJumped = false;
+                
+                //CHECK FOR BLACK CHECKER TO BE JUMPED
+                for(i = 0; i < checkersBlack.length; i++) {
+                    
+                    if(!checkersBlack[i].jumped) {
+                        
+                       //IF CHECKER TO BE JUMPED WITHIN ONE SQUARE OF JUMPING CHECKER'S POSITION AND JUMPED CHECKER WITHIN ONE SQUARE OF END
+                        if (!(Math.abs(checkersBlack[i].xpos - checker.xpos) === Math.abs(xpos - checkersBlack[i].xpos) && 
+                            Math.abs(checker.ypos - checkersBlack[i].ypos) === Math.abs(ypos - checkersBlack[i].ypos)) && !checkerJumped) {
+
+                            if(i === checkersBlack.length - 1) {
+                                errorDisplay(8);
+                                returnValue = false;
+                            }
+
+                        } else {
+
+                            if (!checkerJumped) {
+                                checkersBlack[i].jumped = true;
+                                checkerJumped = true;
+                                blackCap++;
+                            }
+
+
+                        } 
+                    }
+                }
+            }
+            
+        }
+        
+    } else {
+        //KINGED CHECKS
+        
+        //BLACK CHECKS
+        if (checker.color === 'black') {
+            
+            //CHECK KING PATH FOR CHECKERS; ERRORS 9, 6
+            var xDelta = 1;
+            var yDelta = 1;
+            
+            if (xpos - checker.xpos < 0) {
+                xDelta = -1;
+            }
+            
+            if (ypos - checker.ypos < 0) {
+                yDelta = -1;
+            }
+            
+            var xTest = checker.xpos + xDelta;
+            var yTest = checker.ypos + yDelta;
+            
+            //TEST EVERY SQUARE BETWEEN CHECKER POSITION AND END POSITION
+            for(i = 0; i < Math.abs(xpos - checker.xpos); i++) {
+                
+                //KING CANNOT MOVE MORE THAN ONE SQUARE AND CAPTURE; ERROR 9
+                for(j = 0; j < checkersRed.length; j++) {
+                    
+                    if (!checkersRed[j].jumped && checkersRed[j].xpos === xTest && checkersRed[j].ypos === yTest) {
+                        
+                        if (Math.abs(xpos - checker.xpos) === 2 && Math.abs(ypos - checker.ypos) === 2) {
+                            checkersRed[j].jumped = true;
+                            redCap++;
+                        } else {
+                            errorDisplay(9);
+                            returnValue = false;
+                        }
+                        
+                    }
+                }
+                
+                //PATH OBSTRUCTION; ERROR 6
+                for(j = 0; j < checkersBlack.length; j++) {
+                    if (!checkersBlack[j].jumped && checkersBlack[j].xpos === xTest && checkersBlack[j].ypos === yTest) {
+                        errorDisplay(6);
+                        returnValue = false;
+                    }
+                }
+                
+                xTest += xDelta;
+                yTest += yDelta;
+            }
+            
+        } else {
+            //RED CHECKS
+            
+            //CHECK KING PATH FOR CHECKERS; ERRORS 9, 6
+            var xDelta = 1;
+            var yDelta = 1;
+            
+            if (xpos - checker.xpos < 0) {
+                xDelta = -1;
+            }
+            
+            if (ypos - checker.ypos < 0) {
+                yDelta = -1;
+            }
+            
+            var xTest = checker.xpos + xDelta;
+            var yTest = checker.ypos + yDelta;
+            
+            //TEST EVERY SQUARE BETWEEN CHECKER POSITION AND END POSITION
+            for(i = 0; i < Math.abs(xpos - checker.xpos); i++) {
+                
+                //KING CANNOT MOVE MORE THAN ONE SQUARE AND CAPTURE; ERROR 9
+                for(j = 0; j < checkersBlack.length; j++) {
+                    
+                    if (!checkersBlack[j].jumped && checkersBlack[j].xpos === xTest && checkersBlack[j].ypos === yTest) {
+                        
+                        if (Math.abs(xpos - checker.xpos) === 2 && Math.abs(ypos - checker.ypos) === 2) {
+                            checkersBlack[j].jumped = true;
+                            blackCap++;
+                        } else {
+                            errorDisplay(9);
+                            returnValue = false;
+                        }
+                        
+                    }
+                }
+                
+                //PATH OBSTRUCTION; ERROR 6
+                for(j = 0; j < checkersRed.length; j++) {
+                    if (!checkersRed[j].jumped && checkersRed[j].xpos === xTest && checkersRed[j].ypos === yTest) {
+                        errorDisplay(6);
+                        returnValue = false;
+                    }
+                }
+                
+                xTest += xDelta;
+                yTest += yDelta;
+            }
+            
+            
+        }
+        
+    }
+    
+    return returnValue;
+}
+
+//CHECK ALL CHECKERS AND KING NECESARY
+function kingCheck() {
+    
+    for(i = 0; i < checkersBlack.length; i++) {
+        if(!checkersBlack[i].kinged) {
+            if (checkersBlack[i].ypos === 7) {
+                checkersBlack[i].kinged = true;
+                checkersBlack[i].outline = 'gold';
+                kinged(true);
+            }
+        }
+    }
+    
+    for(i = 0; i < checkersRed.length; i++) {
+        if(!checkersRed[i].kinged) {
+            if (checkersRed[i].ypos === 0) {
+                checkersRed[i].kinged = true;
+                checkersRed[i].outline = 'gold';
+                kinged(true);
+            }
+        }
+    }
+    
+}
+
+//CHECK IF ALL RED OR BLACK CHECKERS CAPTURED
+function checkWin() {
+    var returnValue = false;
+    if (redCap === 12) {
+        blackWin++;
+        showBlackWins(blackWin);
+        returnValue = true;
+    } else if (blackCap === 12) {
+        redWin++;
+        showRedWins(redWin);
+        returnValue = true;
+    }
+    return returnValue;
+}
+
+//CHECK IF CHECKER CAN JUMP AGAIN
+function checkJump(xpos, ypos) {
+    
+    //TEST IF CHECKER HAS DIAGONALLY ADJACENT OPPONENT CHECKER TO JUMP
+    //PARAMETERS: xpos & ypos: TILE COORDINATES DIAGONALLY ADJACENT TO CHECKER POSITION
+    function checkAdjacent(xpos, ypos) {
+        
+        var returnValue = false;
+        
+        if (xpos < 0 || xpos > 7 || ypos < 0 || ypos > 7) {
+            return returnValue;
+        }
+        
+        if (currentTurn === 'black') {
+            //BLACK CHECKS
+            
+            //CHECK FOR RED CHECKER TO BE JUMPED
+            for(i = 0; i < checkersRed.length; i++) {
+
+                if(!checkersRed[i].jumped && checkersRed[i].xpos === xpos && checkersRed[i].ypos === ypos) {
+                    returnValue = true;
+                }
+                
+            }
+            
+        } else {
+            //RED CHECKS
+            
+            //CHECK FOR BLACK CHECKER TO BE JUMPED
+            for(i = 0; i < checkersBlack.length; i++) {
+
+                if(!checkersBlack[i].jumped && checkersBlack[i].xpos === xpos && checkersBlack[i].ypos === ypos) {
+                    returnValue = true;
+                }
+            }
+            
+        }
+        
+        return returnValue;
+        
+    }
+    
+    //CHECK IF TILE AT xpos, ypos IS EMPTY OF CHECKERS
+    function checkEmpty(xpos, ypos) {
+        var returnValue = true;
+        
+        //IF OFF BOARD
+        if (xpos < 0 || xpos > 7 || ypos < 0 || ypos > 7) {
+            returnValue = false;
+        }
+        
+        //CHECK BLACK AND RED CHECKS ON TILE
+        for (i = 0; i < checkersBlack.length; i++) {
+            if (!checkersBlack[i].jumped && checkersBlack[i].xpos === xpos && checkersBlack[i].ypos === ypos) {
+                returnValue = false;
+            }
+            if (!checkersRed[i].jumped && checkersRed[i].xpos === xpos && checkersRed[i].ypos === ypos) {
+                returnValue = false;
+            }
+        }
+        
+        return returnValue;
+    }
+    
+    var passC = null;
+    
+    for (i = 0; i < checkersBlack.length; i++) {
+        
+        if(!checkersBlack[i].jumped && checkersBlack[i].xpos === xpos && checkersBlack[i].ypos === ypos) {
+            passC = new checkerObj(i, xpos, ypos, currentTurn);
+        }
+        if(!checkersRed[i].jumped && checkersRed[i].xpos === xpos && checkersRed[i].ypos === ypos) {
+            passC = new checkerObj(i, xpos, ypos, currentTurn);
+        }
+    }
+    
+    var xLeft = xpos - 1;
+    var xRight = xpos + 1;
+    var yAbove = ypos - 1;
+    var yBelow = ypos + 1;
+    
+    var returnValue = false;
+    
+    var indexDoubleJump = 0;
+    
+    //RUN CHECKS FOR EACH DIAGONALLY ADJACENT SQUARE TO CHECKER
+    if (checkAdjacent(xLeft, yAbove)) {
+        
+        if (checkEmpty(xLeft - 1, yAbove - 1)) {
+            doubleJump = true;
+            doubleJumpIndex = passC.index;
+            
+            //STORE DOUBLE JUMP POSSIBILITIES
+            doubleJumpList[indexDoubleJump] = xLeft - 1;
+            doubleJumpList[indexDoubleJump + 1] = yAbove - 1;
+            indexDoubleJump += 2;
+        }
+        
+        returnValue =  checkEmpty(xLeft - 1, yAbove - 1);
+    }
+    
+    if (checkAdjacent(xRight, yAbove)) {
+        
+        if (checkEmpty(xRight + 1, yAbove - 1)) {
+            doubleJump = true;
+            doubleJumpIndex = passC.index;
+            
+            //STORE DOUBLE JUMP POSSIBILITIES
+            doubleJumpList[indexDoubleJump] = xRight + 1;
+            doubleJumpList[indexDoubleJump + 1] = yAbove - 1;
+            indexDoubleJump += 2;
+        }
+        
+        returnValue = checkEmpty(xRight + 1, yAbove - 1);
+    }
+    
+    if (checkAdjacent(xLeft, yBelow)) {
+        
+        if (checkEmpty(xLeft - 1, yBelow + 1)) {
+            doubleJump = true;
+            doubleJumpIndex = passC.index;
+            
+            //STORE DOUBLE JUMP POSSIBILITIES
+            doubleJumpList[indexDoubleJump] = xLeft - 1;
+            doubleJumpList[indexDoubleJump + 1] = yBelow + 1;
+            indexDoubleJump += 2;
+        }
+        
+        returnValue = checkEmpty(xLeft - 1, yBelow + 1);
+    }
+    
+    if (checkAdjacent(xRight, yBelow)) {
+        
+        if (checkEmpty(xRight + 1, yBelow + 1)) {
+            doubleJump = true;
+            doubleJumpIndex = passC.index;
+            
+            //STORE DOUBLE JUMP POSSIBILITIES
+            doubleJumpList[indexDoubleJump] = xRight + 1;
+            doubleJumpList[indexDoubleJump + 1] = yBelow + 1;
+            indexDoubleJump += 2;
+        }
+        
+        returnValue = checkEmpty(xRight + 1, yBelow + 1);
+    }
+    
+    //ERASE LEFT OVER VALUES IN DOUBLEJUMPLIST
+    for(i = indexDoubleJump; i < doubleJumpList; i++) {
+        doubleJumpList[i] = null;
+    }
+    
+    return returnValue;
+    
+}
+
+//CHANGE TURN
+function switchTurn() {
+    if (currentTurn === 'black') {
+        currentTurn = 'red';
+        backgroundColorChange(currentTurn);
+    } else {
+        currentTurn = 'black';
+        backgroundColorChange(currentTurn);
+    }
+}
+
+//CHECK FOR KINGING, MOVING AGAIN, AND WINNING AFTER CHECKER HAS FINISHED MOVING
+function allChecks(xpos, ypos, doubleJumpNew) {
+
+    //CHECK FOR ANOTHER JUMP AND PLAYER WON
+    var moveAgain = false;
+    if (doubleJumpNew) {
+        moveAgain = checkJump(xpos, ypos);
+    }
+    
+    var won = checkWin();
+    
+    if (won) {
+        
+        winSplash(true);
+        alert(currentTurn + " Wins!");
+        renderCheckers();
+        resetBoard();
+        
+    } else if (moveAgain && doubleJump) {
+        
+        kingCheck();
+        alert('Jump Again');
+        renderCheckers();
+        
+        
+    } else {
+        
+        kingCheck();
+        renderCheckers();
+        switchTurn();
+        
+    }
+    
+}
+
+//PARAMETER: STRING OF TWO CHARACTERS FOR COORDINATES ON BOARD AND BOOLEAN FOR RETURN OF CHECKER OBJECT
+//RETURN: ARRAY OF COORDINATES OR CHECKER OBJECT
+function interpretInputChecker(interpret, checkerBoolean) {
+
+    var xpos = -1;
+    var ypos = parseInt(interpret.substr(1,2)) - 1;
+
+    //CONVERT STRING TO INTEGER VARIABLES
+    for(i = 0; i < inputConversionCap.length; i++) {
+        if (interpret.substr(0,1) === inputConversionCap[i] || interpret.substr(0,1) === inputConversionLow[i]) {
+            xpos = i;
+        }
+    }
+
+    //RETURN CHECKER OBJECT
+    if (checkerBoolean) {
+
+        var returnChecker = null;
+
+        if (currentTurn === 'black') {
+            for(i = 0; i < checkersBlack.length; i++) {
+                if (xpos === checkersBlack[i].xpos && ypos === checkersBlack[i].ypos && !checkersBlack[i].jumped) {
+                    return checkersBlack[i];
+                }
+                if (i === checkersBlack.length - 1) {
+                    //NOT A BLACK CHECKER ON START SQUARE
+                    errorDisplay(0);
+                    return null;
+                }
+            }
+
+        } else {
+            for(i = 0; i < checkersRed.length; i++) {
+                if (xpos === checkersRed[i].xpos && ypos === checkersRed[i].ypos && !checkersRed[i].jumped) {
+                    return checkersRed[i];
+                }
+                if (i === checkersRed.length - 1) {
+                    //NOT A RED CHECKER ON START SQUARE
+                    errorDisplay(0);
+                    return null;
+                }
+            }
+        }
+
+    } else {
+
+        //RETURN VARIABLE ARRAY
+        var returnArray = new Object();
+        returnArray[0] = xpos;
+        returnArray[1] = ypos;
+        return returnArray;
+
+    }
+    
+}
+
+//METHOD TO ANIMATE AND MOVE CHECKER TO NEW SPACE
+//PARAMETERS: CHECKER TO MOVE AND TILE COORDINATES TO MOVE TO
+function moveToTile(checker, xN, yN) {
+    'use strict';
+
+    var pos = 0;
+    var stop = Math.round(Math.sqrt(Math.pow((xN - checker.xpos), 2) + Math.pow((yN - checker.ypos), 2))) * 100;
+    var posDelta = stop / 10;
+    
+    var timeLength = 100;
+    var delta = 1 / timeLength * (tileSize / 6);
+
+    var run = xN - checker.xpos;
+    var rise = yN - checker.ypos;
+    var radiusChange = checker.radius * 0.5;
+
+    var id = setInterval(frame, 75);
+    
+    function frame() {
+        
+        if (pos >= stop - posDelta) {
+            //CENTER CHECKER AND RESET RADIUS
+            checker.xpos = xN;
+            checker.ypos = yN;
+            checker.radius = (tileSize / 2) - 5;
+            
+            myClick.play();
+            
+            //RUN APROPRIATE CHECKS
+            allChecks(xN, yN, (Math.abs(rise) === 2 && Math.abs(run) === 2));
+            
+            renderCheckers();
+            clearInterval(id);
+            
+        } else {
+            
+            //MOVE CHECKER DELTA * RUN/RISE UNTIL IN DESIRED POSITION
+            checker.xpos += run * delta;
+            checker.ypos += rise * delta;
+            
+            
+            
+            if (pos < (stop / 2) - posDelta) {
+                checker.radius += radiusChange * delta;
+            } else if (pos > (stop / 2) - posDelta) {
+                checker.radius -= radiusChange * delta;
+            } 
+            
+            renderCheckers();
+            pos += posDelta;
+
+        }
+    }
+}
+
+//MOVE CHECKER TO NEW POSITION USING INOUTFORM
+function moveChecker() {
+    
+    var passCheck = interpretInputChecker(inOutForm.start.value, true);
+    var positions = interpretInputChecker(inOutForm.end.value, false);
+    
+    
+    if (passCheck != null) {
+    
+        if (runChecks(passCheck, positions[0], positions[1])) {
+            
+            var allowedDoubleJump = false;
+            
+            if (doubleJump) {
+                
+                console.log('xpos: ' + positions[0]);
+                console.log('ypos: ' + positions[1]);
+                for (i = 0; i < doubleJumpList.length; i += 2) {
+                    console.log('doubleJumpList[' + i + ']: ' + doubleJumpList[i]);
+                    console.log('doubleJumpList[' + (i + 1) + ']: ' + doubleJumpList[i+1]);
+                    if (positions[0] === doubleJumpList[i] && positions[1] === doubleJumpList[i+1]) {
+                        allowedDoubleJump = true;
+                    }
+                }
+
+            }
+            console.log('allowedDoubleJump: ' + allowedDoubleJump);
+            console.log('doubleJump: ' + doubleJump);
+            
+            if ((doubleJump && passCheck.index === doubleJumpIndex && allowedDoubleJump) || (!doubleJump)) {
+                //ANIMATE MOVE
+                moveToTile(interpretInputChecker(inOutForm.start.value, true), positions[0], positions[1]);
+                
+                //RESET INPUT FORM
+                inOutForm.start.value = "";
+                inOutForm.end.value = "";
+                inOutForm.start.focus();
+                
+            } else if(doubleJump && !allowedDoubleJump) {
+                
+                if (passCheck.index != doubleJumpIndex) {
+                    //MUST MOVE CHECKER THAN CAN DOUBLE JUMP; ERROR 12
+                    errorDisplay(12);
+                } else {
+                    alert('Must make Double Jump');
+                }
+            }
+            
+        }
+    }
+    
+}
+
+//INCREMENT DRAWS VARIABLE
+function newDraw() {
+    draws++;
+    showDraws(draws);
+    resetBoard();
+}
+
+//GIVE EACH PLAYER FOUR KINGS
+function kingBattle() {
+    
+    for(i = 0; i < checkersBlack.length; i++) {
+        if (checkersBlack[i].ypos === 0) {
+            checkersBlack[i].kinged = true;
+            checkersBlack[i].outline = 'gold';
+        } else {
+            checkersBlack[i].jumped = true;
+        }
+    }
+    
+    for(i = 0; i < checkersRed.length; i++) {
+        if (checkersRed[i].ypos === 7) {
+            checkersRed[i].kinged = true;
+            checkersRed[i].outline = 'gold';
+        } else {
+            checkersRed[i].jumped = true;
+        }
+    }
+    
+    blackCap = 8;
+    redCap = 8;
+}
+
+//GIVES EACH PLAYER SINGLE CHECKER
+function singleCheckerDuel() {
+    for(i = 0; i < checkersBlack.length; i++) {
+        if(!(i === 0)) {
+            checkersBlack[i].jumped = true;
+            checkersRed[i].jumped = true;
+        }
+    }
+    blackCap = 11;
+    redCap = 11;
+}
+
+//SET UP CHECKS TO TEST DOUBLE JUMP AND WIN
+function doubleJumpTest() {
+    for(i = 0; i < checkersBlack.length; i++) {
+        if (i === 0) {
+            checkersBlack[i].xpos = 1;
+            checkersBlack[i].ypos = 1;
+            checkersBlack[i].kinged = true;
+            checkersBlack[i].outline = 'gold';
+        } else if (i === 1) {
+            checkersBlack[i].xpos = 5;
+            checkersBlack[i].ypos = 5;
+            checkersBlack[i].kinged = true;
+            checkersBlack[i].outline = 'gold';
+        } else {
+            checkersBlack[i].jumped = true;
+        }
+        
+    }
+    
+    var x = 2;
+    
+    for (i = 0; i < checkersRed.length; i++) {
+        if (i < 3) {
+            checkersRed[i].xpos = x;
+            checkersRed[i].ypos = 2;
+            x += 2;
+        } else {
+            checkersRed[i].jumped = true;
+        }
+        
+    }
+    redCap = 9;
+    blackCap = 11;
+    
+}
+
+//CHECK SAME COLOR CHECKER AGAINST ITSELF
+function doubleJumpTestTwo(){
+    for(i = 0; i < checkersBlack.length; i++) {
+        if (i <= 1) {
+            checkersBlack[i].xpos = 2;
+            checkersBlack[i].ypos = i * 2;
+        } else {
+            checkersBlack[i].jumped = true;
+        }
+    }
+    
+    for(i = 0; i < checkersRed.length; i++) {
+        if (i <= 1) {
+            checkersRed[i].xpos = 5;
+            checkersRed[i].ypos = 5 - i * 2;
+        } else {
+            checkersRed[i].jumped = true;
+        }
+    }
+}
+
+//INITALIZE CHECKERS AND RENDER
+generateCheckerObjs();
+//kingBattle();
+//singleCheckerDuel();
+//doubleJumpTest();
+//doubleJumpTestTwo();
+renderCheckers();
+    
+    </script>
+
+</body>
+</html>

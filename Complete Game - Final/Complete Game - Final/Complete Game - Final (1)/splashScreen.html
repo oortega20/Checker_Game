@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="CheckerBoard.css"/>
+</head>
+<body style = "background-color: royalblue">
+    <canvas id = "splashScreen" width = "1200" height = "650"></canvas>
+   
+        <button id = "play" onclick = "startGame ()"> Play </button> 
+
+<script>
+// for manipulation of the splash objects.
+var checkersArray = [];
+
+var splashScreen = document.getElementById("splashScreen");
+var ctx = splashScreen.getContext ("2d");
+var checkerColor = ctx.strokeStyle;
+// my sound files
+var myMusic = new Audio ("myMusic.mp3");
+    myMusic.play ();
+    
+var myGong = new Audio ("myGong.mp3");
+
+var handsomeArray = [];
+    handsomeArray [0] = "Noah Solomon";
+    handsomeArray [1] = "Oscar Ortega";
+// will start the game after playing a few sounds.
+function startGame() {
+    myMusic.pause();
+    myGong.play ();
+    var id = setInterval(startGame, 2200);
+    var playCounter = 0;
+        function startGame () {
+            if (playCounter < 1){
+                playCounter++;
+            } else {
+                location.href = ("v0.0.8CheckerBoard.html");
+            }
+        }
+}
+
+// creates the checker title.
+function generateTitle (){
+    ctx.font = "100px monospace";
+    ctx.fillStyle = "black";
+    ctx.fillText ("Checkers",450,275);
+}
+function weFine () {
+    ctx.font = "35px monospace";
+    ctx.fillStyle = "black";
+    for (i = 0; i < 2; i++) {
+        if (i < 1) {
+            ctx.fillText (handsomeArray[i], 800, 400);
+        } else {
+            ctx.fillText (handsomeArray[i], 300, 400);
+        }
+    }
+}
+      
+// my checkers object constructor needs a number and color to be called.
+function splashObj (checkerNumber, checkerColor) {
+    this.checker = generateCheckers(checkerNumber);
+    this.color = generateCheckerColor(checkerColor);
+}    
+// method to color the checker. Called upon by the color of the checker.
+function generateCheckerColor (checkerColor) {
+        if (checkerColor === "black") {   
+            ctx.fillStyle = "black";
+            ctx.fill();
+        } else {
+            ctx.fillStyle = "red";
+            ctx.fill();
+        }
+}
+// method to generate the checker. called upon by a number
+function generateCheckers(checkerNumber){
+    var space = 50;
+    var circleXpos = 105;
+    var circleYpos = 500;
+    var radius = 20;          
+                if( checkerNumber < 20) {
+                    var circleYpos = 500;
+                    var circleXpos = 140;
+                    ctx.beginPath ();
+                    ctx.arc(circleXpos + ((checkerNumber + 1) * space), circleYpos, radius, 0, 2 * Math.PI);
+                    ctx.stroke ();
+         
+                } else if ( checkerNumber < 40) {
+                    var circleYpos = 100;
+                    var circleXpos = 140;
+                    ctx.beginPath ();
+                    ctx.arc (circleXpos + ((checkerNumber- 19) * space), circleYpos, radius, 0, 2 * Math.PI);
+                    ctx.stroke ();
+               
+                } else if ( checkerNumber < 48) {
+                    var circleYpos = 50;
+                    var circleXpos = 190;
+                    ctx.beginPath ();
+                    ctx.arc (circleXpos, circleYpos + (checkerNumber - 39) * space, radius, 0, 2 * Math.PI);
+                    ctx.stroke ();
+    
+                } else if ( checkerNumber < 55) {
+                    var circleYpos = 50;
+                    var circleXpos = 1140;
+                    ctx.beginPath ();
+                    ctx.arc (circleXpos, circleYpos + ((checkerNumber - 46) * space), radius, 0, 2 * Math.PI);
+                    ctx.stroke ();            
+                } else {
+                }
+
+}
+
+// draws the checkers the set number of times indicated.
+function checkersOne () {
+    for (i = 0; i < 55; i++) {
+        if (i % 2 === 0) {
+            checkersArray[i] = new splashObj(i, 'black');
+        } else {
+            checkersArray[i] = new splashObj(i, 'red');
+        }
+    }
+}
+// essentially my animation will either do the first option or the second one.
+function checkersTwo () {
+    for (i = 0; i < 55; i++) {
+        if (i % 2 === 0) {
+            checkersArray[i] = new splashObj(i, 'red');
+        } else {
+            checkersArray[i] = new splashObj(i, 'black');
+        }
+    }
+}
+// animates the checker color by switching the generation method.
+function animateColor () {
+    var id = setInterval(frame, 150);
+    var colorCounter = 0;
+        function frame () {
+            if (colorCounter % 2 == 0) {
+                checkersOne();
+            } else {
+                checkersTwo();
+            } colorCounter++;
+        }
+}
+weFine();
+generateTitle();
+checkersOne();
+animateColor();    
+</script>
+
+</body>
+</html>
